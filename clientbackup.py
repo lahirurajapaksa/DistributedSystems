@@ -1,7 +1,10 @@
 import Pyro4
 import sys
+import math
 #display questions to the user to get the user's basic info to facilitate delivery
+userinfo={}
 def getuserinfo():
+	#make a dict of all the user info that we can send back up the chain
 	while True:
 		valid = False
 		while valid==False:
@@ -12,10 +15,13 @@ def getuserinfo():
 				valid = True
 		if firstname.lower() == "restart":
 			continue
+		else:
+			userinfo['firstname'] = firstname
 
 
 		valid = False
 		while valid == False:
+			print('\n')
 			lastname = input("Last Name: ").strip()
 			if lastname.isalpha()==False:
 				print("Do not use any non-alphabetic characters")
@@ -24,50 +30,112 @@ def getuserinfo():
 
 		if lastname.lower() == "restart":
 			continue
+		else:
+			userinfo['lastname'] = lastname
 
-		deliveryAddress = input("Delivery address: ").strip()
+		print('\n')
+		valid = False
+		while valid == False:
+
+			deliveryAddress = input("Delivery address: ").strip()
+
+			if len(deliveryAddress.split())<=0:
+				print('Cannot leave this field blank')
+			else:
+				valid = True
+
 
 		if deliveryAddress.lower() == "restart":
 			continue
+		else:
+			userinfo['deliveryaddress'] = deliveryAddress
 
-		postcode = input("Postcode: ").strip()
+		print('\n')
+		valid = False
+		while valid == False:
+
+			postcode = input("Postcode: ").strip()
+
+			if len(postcode.split())<=0:
+				print("Cannot leave this field blank")
+			else:
+				valid = True
 
 		if postcode.lower() == "restart":
 			continue
+		else:
+			userinfo['postcode'] = postcode
 
 		valid = False
 		validrestnames = ["chinesedragon","mcdonalds","pizzahut","exoticdishes","restart"]
 		while valid==False:
+			print('\n')
 			restaurantname = input("Which restaurant would you like to place your order at?").strip()
 			#remove any whitespaces from the string
 			restaurantname="".join(restaurantname.split())
 			if restaurantname.isalpha()==False:
-				print("Do not use any non-alphabetic characters")
+				print("Please enter a valid restaurant name")
 				continue
 			elif restaurantname.lower() not in validrestnames:
-				print("Please enter a valid restaurantname")
+				print("Please enter a valid restaurant name")
 				continue
 			else:
 				valid = True
 
 		if restaurantname.lower() == "restart":
 			continue
+		else:
+			userinfo['restaurantname'] = restaurantname
 
 		valid = False
 		while valid == False:
-			ordernumbers = input("Enter the 'numbers' corresponding to your order. If you would like more than one order of the same portion, please repeat this number the desired amount. Example:'1,2,2,4' :").strip()
+			print('\n')
+			ordernumbers = input("Enter the 'numbers' corresponding to your order. If you would like more than one order of the same portion, please repeat this number the desired amount. Example: 1,2,2,4  or 1,2,3  :").strip()
 			ordernumbers="".join(ordernumbers.split())
 			if ordernumbers.lower() == "restart":
 				break
-			for i in range(0,len(ordernumbers),2):
-			    if ordernumbers[i].isdigit()==False:
-			        print("only use numerals")
-			    else:
-			    	valid = True
+			#check that the length is an even number - this is an incorrect format
+			if len(ordernumbers)%2==0:
+				print('\n')
+				print("Incorrect format, please refer to example")
+				continue
+
+			commacount = 0
+			intcount = 0
+			wrongformat = False
+			#check that the number of commas and integers is valid
+			for j in range(len(ordernumbers)):
+				if ordernumbers[j]==",":
+					commacount += 1
+				elif ordernumbers[j].isdigit()==True:
+					intcount += 1
+				else:
+					wrongformat = True
+
+			requiredcommacount = math.floor(len(ordernumbers)/2)
+			requiredintcount = math.ceil(len(ordernumbers)/2)
+
+			if wrongformat==True:
+				print("use only numerals and commas")
+			elif commacount != requiredcommacount:
+				print("Incorrect commas used, please refer to example")
+			elif intcount != requiredintcount:
+				print("Incorrect numerals used, please refer to example")
+			else:
+				valid = True
+			# nointcount = 0
+			# for i in range(0,len(ordernumbers),2):
+			#     if ordernumbers[i].isdigit()==False:
+			#         nointcount+=1
+			# if nointcount == 0:
+			# 	valid = True
+			# else:
+			# 	print("Use only numerals")
+
 		if ordernumbers.lower()=="restart":
 			continue
 		else:
-			print("ordernumbers ",ordernumbers)
+			userinfo['ordernumbers'] = ordernumbers
 			return ordernumbers
 			break
 
@@ -76,7 +144,6 @@ ipaddress = "127.0.0.1"
 FoodMenu = Pyro4.core.Proxy('PYRO:FOOD2@'+ ipaddress + ':9091')
 
 FoodDict = FoodMenu.foodmenureturn()
-
 
 
 
@@ -103,12 +170,5 @@ listoforders = getuserinfo()
 print("list of orders ",listoforders)
 FoodMenu.returnorderstring(listoforders)
 
+FoodMenu.returnuserdict(userinfo)
 
-# @Pyro4.expose
-# class Sendorders(object):
-# 	def orderreturn(self):
-# 		return ordernumbers
-
-# Pyro4.Daemon.serveSimple({
-#     Sendorders: 'ORDERS',
-# }, host="192.168.1.3", port=9092, ns=False, verbose=True)
