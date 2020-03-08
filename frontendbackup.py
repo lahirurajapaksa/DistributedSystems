@@ -12,19 +12,30 @@ FoodDict = FoodMenu.foodmenureturn()
 
 print(FoodDict)
 
+listoforders1 ="hey !!!!!!!!"
 
 
 @Pyro4.expose
 class FoodMenufrontend(object):
+
 	def foodmenureturn(self):
 		#send the food dict to the front end server
 		return FoodDict
 
+	# def returnuserdict(self,userdict):
+	# 	#send the restaurant name
+
+	# 	ThisDict = userdict
+	# 	return userdict
+
+	# print(ThisDict)
+
 	def returnorderstring(self,listoforders):
 		#send the list of orders from the client to the frontend
-		print(listoforders)
-
-
+		global listoforders1
+		listoforders1 = listoforders
+		return listoforders
+	print(listoforders1)
 
 Pyro4.Daemon.serveSimple({
     FoodMenufrontend: 'FOOD2',
