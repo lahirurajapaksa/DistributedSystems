@@ -6,6 +6,23 @@ class FoodMenu(object):
 		#send the food dict to the front end server
 		return foodDict
 
+@Pyro4.behavior(instance_mode="single")
+class UserOrderfromfrontend(object):
+	def __init__(self,userdict):
+		self._userdict = userdict
+
+	@Pyro4.expose
+	def getUserInfoBackend(self):
+		print("printing get user info")
+		print(self._userdict)
+		return self._userdict
+	@Pyro4.expose
+	def setUserInfoBackend(self,value):
+		print("setting user info")
+		self._userdict = value
+		print('received', value)
+
+
 def storemenus():
 	#store the food menus
 	foodDict={}
@@ -28,10 +45,13 @@ foodDict = storemenus()
 
 menuObject = FoodMenu()
 
+UserOrdersFrontEnd = UserOrderfromfrontend({})
 def connecttofrontend():
 
 	Pyro4.Daemon.serveSimple({
 	    menuObject: 'FOOD',
+	    UserOrdersFrontEnd : 'UserOrdersBackend'
+
 	}, host="127.0.0.1", port=9090, ns=False, verbose=True)
 
 

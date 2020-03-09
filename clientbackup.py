@@ -172,22 +172,13 @@ print("list of orders ",listoforders)
 #create instance of the order class
 OrderInstance = Pyro4.core.Proxy('PYRO:UserOrders@'+ ipaddress + ':9091')
 
+OrderInstance.sendUserInfotoBackend(userinfo)
 
-OrderInstance.setUserInfo(userinfo)
+# OrderInstance.setUserInfo(userinfo)
 
-neworders = OrderInstance.getUserInfo()
-print(neworders," THE NEW ORDERS")
-
-
-
+# neworders = OrderInstance.getUserInfo()
+# print(neworders," THE NEW ORDERS")
 
 
 
-# FoodMenu.setOrderList(listoforders)
-
-# FoodMenu.returnorderstring(listoforders)
-
-
-
-#FoodMenu.returnuserdict(userinfo)
 
