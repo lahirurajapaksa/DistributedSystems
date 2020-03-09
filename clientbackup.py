@@ -168,7 +168,26 @@ displayfoodmenu()
 listoforders = getuserinfo()
 
 print("list of orders ",listoforders)
-FoodMenu.returnorderstring(listoforders)
 
-FoodMenu.returnuserdict(userinfo)
+#create instance of the order class
+OrderInstance = Pyro4.core.Proxy('PYRO:UserOrders@'+ ipaddress + ':9091')
+
+
+OrderInstance.setUserInfo(userinfo)
+
+neworders = OrderInstance.getUserInfo()
+print(neworders," THE NEW ORDERS")
+
+
+
+
+
+
+# FoodMenu.setOrderList(listoforders)
+
+# FoodMenu.returnorderstring(listoforders)
+
+
+
+#FoodMenu.returnuserdict(userinfo)
 
