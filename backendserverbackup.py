@@ -26,10 +26,12 @@ def storemenus():
 
 foodDict = storemenus()
 
+menuObject = FoodMenu()
+
 def connecttofrontend():
 
 	Pyro4.Daemon.serveSimple({
-	    FoodMenu: 'FOOD',
+	    menuObject: 'FOOD',
 	}, host="127.0.0.1", port=9090, ns=False, verbose=True)
 
 
