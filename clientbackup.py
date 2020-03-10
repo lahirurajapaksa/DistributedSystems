@@ -102,6 +102,7 @@ def getuserinfo():
 				print('\n')
 				restaurantname = input("Which restaurant would you like to place your order at?").strip()
 				#remove any whitespaces from the string
+				restaurantname1 = restaurantname.strip()
 				restaurantname="".join(restaurantname.split())
 				if restaurantname.isalpha()==False:
 					print("Please enter a valid restaurant name")
@@ -115,7 +116,7 @@ def getuserinfo():
 			if restaurantname.lower() == "restart":
 				continue
 			else:
-				userinfo['restaurantname'] = restaurantname
+				userinfo['restaurantname'] = restaurantname1.lower()
 				#fifth char of customer id
 				customerid = customerid + restaurantname[0]
 
@@ -163,15 +164,25 @@ def getuserinfo():
 				elif intcount != requiredintcount:
 					print("Incorrect numerals used, please refer to example")
 				else:
-					valid = True
-				# nointcount = 0
-				# for i in range(0,len(ordernumbers),2):
-				#     if ordernumbers[i].isdigit()==False:
-				#         nointcount+=1
-				# if nointcount == 0:
-				# 	valid = True
-				# else:
-				# 	print("Use only numerals")
+					#check that all the numbes are between 1 and 5
+					allnumsgood = False
+					validints = [1,2,3,4,5]
+					for k in range(0,len(ordernumbers),2):
+						currentnum = int(ordernumbers[k])
+						if currentnum in validints:
+							allnumsgood = True
+							continue
+						else:
+							print("Please only use order numbers that are available (1-5)")
+							allnumsgood = False
+					if allnumsgood == True:
+						valid = True
+					else:
+						valid = False
+						continue
+
+
+
 
 			if ordernumbers.lower()=="restart":
 				continue
@@ -218,14 +229,14 @@ def displayfoodmenu():
 	print('--------------')
 
 
-print("Welcome to Just Hungry, strap in for some finger licking food 👅\n")
+print("Welcome to Just Hungry, strap in for some finger licking food \n")
 print('The menu is as follows\n')
 
 displayfoodmenu()
 
 listoforders = getuserinfo()
 
-print("list of orders ",listoforders)
+#print("list of orders ",listoforders)
 
 #create instance of the order class
 OrderInstance = Pyro4.core.Proxy('PYRO:UserOrders@'+ ipaddress + ':9091')
@@ -241,14 +252,42 @@ else:
 	check = OrderInstance.GetUserMessage()
 	if check == "OrderFound":
 		RetrievedOrder = OrderInstance.getFullUserOrder()
-		print("Retrieved Order is ")
-		print(RetrievedOrder)
+		print('\n')
+		print("Retrieved Order is : \n")
+		#format the retrieved order
+		fname = RetrievedOrder['firstname']
+		print("First name: ",fname,"\n")
+
+		lname = RetrievedOrder['lastname']
+		print("Last name: ",lname,"\n")
+
+		da = RetrievedOrder['deliveryaddress']
+		print("Delivery Address:",da,"\n")
+
+		pc = RetrievedOrder['postcode']
+		print("Postcode: ",pc,"\n")
+
+		rn = RetrievedOrder['restaurantname']
+		print("Restaurant :",rn,"\n")
+
+		print("Dishes : \n")
+		ordered = RetrievedOrder['ordernumbers']
+
+		#use the restaurant name to be the key in FoodDict
+		restpossibleorders = FoodDict[rn] #this is a list of that restaurants available orders
+
+		for i in range(0,len(ordered),2):
+			#incrementing by 2 allows us to skip the commas
+			#we use the order number as an index to the restaurant's orders
+			#index -1 
+			index = int(ordered[i])
+			index = index -1
+			dish = restpossibleorders[index]
+			print(dish,"\n")
+
 	else:
 		print(check)
 
-#now get the messages back from the frontend
-
-#check whether what you sent was an OrderID or dictionary
 
 
 
