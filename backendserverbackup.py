@@ -8,8 +8,10 @@ class FoodMenu(object):
 
 @Pyro4.behavior(instance_mode="single")
 class UserOrderfromfrontend(object):
-	def __init__(self,userdict):
+	BIGorderlist = []
+	def __init__(self,userdict,OrderList):
 		self._userdict = userdict
+		self._OrderList = OrderList
 
 	@Pyro4.expose
 	def getUserInfoBackend(self):
@@ -21,6 +23,50 @@ class UserOrderfromfrontend(object):
 		print("setting user info")
 		self._userdict = value
 		print('received', value)
+
+	@Pyro4.expose
+	def setOrderList(self,value):
+		print("Setting the list of orders")
+
+		self._OrderList = value
+		print("Order List is ",self._OrderList)
+
+	@Pyro4.expose
+	def getOrderList(self):
+
+		print("Getting list of orders")
+		print(self._OrderList)
+		return self._OrderList
+
+	#will be appending a dictionary to the list of dictionaries
+	@Pyro4.expose
+	def appendtoOrderList(self,dictionary):
+		print("APPEND to order list")
+
+		# self.BIGorderlist.append(dictionary)
+		# print('list is ',self.BIGorderlist)
+
+		#create instance of the class
+		ipaddress = "127.0.0.1"
+		portnumberforprimary = ":9090"
+		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
+			try:
+				p._pyroBind()
+			except Pyro4.errors.CommunicationError:
+				print("connection error to OG class")
+
+		OGclass = p
+		#get the list
+		ReturnedOrderlist = OGclass.getOrderList()
+		#append the new dictionary to it
+		ReturnedOrderlist.append(dictionary)
+		print('list is ',ReturnedOrderlist)
+		#Set the updated list
+		OGclass.setOrderList(ReturnedOrderlist)
+		
+
+
+
 
 	@Pyro4.expose
 	def sendDataToBackups(self):
@@ -38,27 +84,45 @@ class UserOrderfromfrontend(object):
 
 		print("BACKING UP THE FOLLOWING DATA")
 		Backups = p
-		print("BEfore Dictionary line")
-		Dictionary = Backups.getUserInfoBackend()
+		# print("BEfore Dictionary line")
+		# Dictionary = Backups.getUserInfoBackend()
+		
+		#Get the list of orders
+		BigList = Backups.getOrderList()
+
+		print('LIST TO BACKUP IS ',BigList)
+
 		print('END OF BACKUP')
-		#if u connect send it across
+		#if u connect send it across to the backups
 
-		#print(Dictionary)
+		#create the objects for backups with try and except
+		ipaddress = "127.0.0.1"
+		portnumberforbackup1 = ":9092"
+		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforbackup1) as p:
+			try:
+				p._pyroBind()
+			except Pyro4.errors.CommunicationError:
+				print("connection error to backup server 1")
 
-		#connect to the remaining available servers and send over the information there
+		Backupserver1 = p
 
-		# print("userdict is ", self._userinfo)
 
-#the class that will store all the variables
-# @Pyro4.behavior(instance_mode="single")
-# class Backup(object):
-# 	def __init__(self,userdict,):
-# 		self.use
-#class backup - point to this with the proxy
-#class that has all variables that we need to store
-#replicate function to send all the variables to the other two
+		ipaddress = "127.0.0.1"
+		portnumberforbackup2 = ":9093"
+		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforbackup2) as p:
+			try:
+				p._pyroBind()
+			except Pyro4.errors.CommunicationError:
+				print("connection error to backup server 2")
 
-#variable._self = pyroproxy ipaddress :9090
+		Backupserver2 = p
+
+		#store BigList in the backups by setting that as the OrderList in their respective classes
+		Backupserver1.setOrderList(BigList)
+		Backupserver2.setOrderList(BigList)
+
+
+
 
 def storemenus():
 	#store the food menus
@@ -82,7 +146,7 @@ foodDict = storemenus()
 
 menuObject = FoodMenu()
 
-UserOrdersFrontEnd = UserOrderfromfrontend({})
+UserOrdersFrontEnd = UserOrderfromfrontend({},[])
 def connecttofrontend():
 
 	Pyro4.Daemon.serveSimple({

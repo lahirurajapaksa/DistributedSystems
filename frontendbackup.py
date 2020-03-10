@@ -1,12 +1,13 @@
 import Pyro4
 import sys
+import Pyro4.errors
 #acts as a bridge between the client and the backend severs
 ipaddress = "127.0.0.1"
 
 
 
 #have a nested try and except to try and connect to a server
-import Pyro4.errors
+
 portnumberforprimary = ':9090'
 with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
 	try:
@@ -116,7 +117,12 @@ class UserOrderDetails(object):
 
 		self._UserOrderBackend.setUserInfoBackend(value)
 
+		#append the overall list of orders with the current order
+		UserOrderBackend.appendtoOrderList(value)
+
+		#backup the new list, sending across to the backup servers
 		UserOrderBackend.sendDataToBackups()
+
 
 
 		#neworder = self._UserOrderBackend.getUserInfoBackend()
