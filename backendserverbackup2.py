@@ -9,9 +9,12 @@ class FoodMenu(object):
 @Pyro4.behavior(instance_mode="single")
 class UserOrderfromfrontend(object):
 	BIGorderlist = []
-	def __init__(self,userdict,OrderList):
+	def __init__(self,userdict,OrderList,message,OrderID,OrderDict):
 		self._userdict = userdict
 		self._OrderList = OrderList
+		self._message = message
+		self._OrderID = OrderID
+		self._OrderDict = OrderDict
 
 	@Pyro4.expose
 	def getUserInfoBackend(self):
@@ -23,6 +26,16 @@ class UserOrderfromfrontend(object):
 		print("setting user info")
 		self._userdict = value
 		print('received', value)
+
+	@Pyro4.expose
+	def setUserInfoOrderID(self,value):
+		print("Setting order ID")
+		self._OrderID = value
+
+	@Pyro4.expose
+	def getUserInfoOrderID(self):
+		print("Getting order ID")
+		return self._OrderID
 
 	@Pyro4.expose
 	def setOrderList(self,value):
@@ -37,6 +50,71 @@ class UserOrderfromfrontend(object):
 		print("Getting list of orders")
 		print(self._OrderList)
 		return self._OrderList
+
+	@Pyro4.expose
+	def setorderdictforReturn(self,value):
+		print("Setting the Order Dict to return")
+		self._OrderDict = value
+
+	@Pyro4.expose
+	def getorderdictforReturn(self):
+		print("Getting the Order Dict to return")
+		return self._OrderDict
+
+
+	@Pyro4.expose
+	def setmessage(self,value):
+		self._message = value
+		print("Message to return is ",self._message)
+
+	@Pyro4.expose
+	def sendendmessage(self):
+		return self._message
+
+	@Pyro4.expose
+	def retrieveOrder(self):
+		#connect to the class object to access the methods and variables
+		ipaddress = "127.0.0.1"
+		portnumberforprimary = ":9092"
+		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
+			try:
+				p._pyroBind()
+			except Pyro4.errors.CommunicationError:
+				print("connection error to OG class")
+
+		OGclass = p
+
+		#the list of dicts we will be iterating through
+		ReturnedOrderlist = OGclass.getOrderList()
+
+		OrderIDtocheck = OGclass.getUserInfoOrderID()
+		#use the returned order list to find the orderID required
+		#if not, return "not valid Order ID"
+		foundID = False
+
+
+
+		for i in range(len(ReturnedOrderlist)):
+			currentdict = ReturnedOrderlist[i]
+			currentcustid = currentdict['customerid']
+			if currentcustid == OrderIDtocheck:
+				print("Found the Order")
+				foundID = True
+				dicttoreturn = currentdict
+		
+				break
+		if foundID == True:
+			#return the order as a dictionary
+			OGclass.setorderdictforReturn(dicttoreturn)
+			return 1
+		else:
+			print("Did not find the order")
+			#send back an error to the client
+			messagetoreturn = "Invalid OrderID used"
+			OGclass.setmessage(messagetoreturn)
+			return 0
+
+
 
 	#will be appending a dictionary to the list of dictionaries
 	@Pyro4.expose
@@ -58,11 +136,17 @@ class UserOrderfromfrontend(object):
 		OGclass = p
 		#get the list
 		ReturnedOrderlist = OGclass.getOrderList()
+
+
+		#this is where a customer would place a normal order
+
 		#append the new dictionary to it
 		ReturnedOrderlist.append(dictionary)
 		print('list is ',ReturnedOrderlist)
+		currentorderid = str(dictionary['customerid'])
 		#Set the updated list
 		OGclass.setOrderList(ReturnedOrderlist)
+		OGclass.setmessage("Your order was successfully placed, Order ID = "+currentorderid)
 		
 
 
@@ -97,7 +181,6 @@ class UserOrderfromfrontend(object):
 
 		backupserver1exists = False
 		backupserver2exists = False
-
 		#create the objects for backups with try and except
 		ipaddress = "127.0.0.1"
 		portnumberforbackup1 = ":9090"
@@ -124,16 +207,17 @@ class UserOrderfromfrontend(object):
 
 		Backupserver2 = p
 		print("Backupserver2", Backupserver2)
-		#store BigList in the backups by setting that as the OrderList in their respective classes
+
 		print('BIG LIST IS')
 		print(BigList)
-
+		#store BigList in the backups by setting that as the OrderList in their respective classes
 		if backupserver1exists==True:
 			Backupserver1.setOrderList(BigList)
 			print("Successfully backed up backup server 1")
 		if backupserver2exists==True:
 			Backupserver2.setOrderList(BigList)
 			print("Successfully backed up backup server 2")
+
 
 
 
@@ -160,7 +244,7 @@ foodDict = storemenus()
 
 menuObject = FoodMenu()
 
-UserOrdersFrontEnd = UserOrderfromfrontend({},[])
+UserOrdersFrontEnd = UserOrderfromfrontend({},[],"","",{})
 def connecttofrontend():
 
 	Pyro4.Daemon.serveSimple({

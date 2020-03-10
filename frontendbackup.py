@@ -80,10 +80,12 @@ class FoodMenufrontend(object):
 
 @Pyro4.behavior(instance_mode="single")
 class UserOrderDetails(object):
-	def __init__(self,userdict,ipaddress,portnumberforprimary):
+	def __init__(self,userdict,ipaddress,portnumberforprimary,fulluserorder,usermessage):
 		self._userdict = userdict
 		self._ipaddress = ipaddress
 		self._portnumberforprimary = portnumberforprimary
+		self._fulluserorder = fulluserorder
+		self._usermessage = usermessage
 		
 
 	#	print("ok")
@@ -98,35 +100,113 @@ class UserOrderDetails(object):
 		self._userdict = value
 
 	@Pyro4.expose
+	def setFullUserOrder(self,value):
+		print("Setting full user order")
+		self._fulluserorder = value
+
+	@Pyro4.expose
+	def getFullUserOrder(self):
+		print("Getting full user order")
+		return self._fulluserorder
+
+	@Pyro4.expose
+	def SetUserMessage(self,value):
+		print("Setting user message")
+		self._usermessage = value
+
+	@Pyro4.expose
+	def GetUserMessage(self):
+		print("Getting user message")
+		return self._usermessage
+
+
+
+	@Pyro4.expose
 	def sendUserInfotoBackend(self,value):
 		self._userdict = value
 		print('received')
 		print(self._ipaddress)
 		print(self._portnumberforprimary)
 
-		# #connect to the backend and send over userinfo
-		# print('START!!!')
-		# with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
-		# 	try:
-		# 		#try to connect to server number one
-		# 		p._pyroBind()
-		# 		print("WE ARE CONNECTED")
-		# 	except Pyro4.errors.CommunicationError:
-		# 		print('Could not connect to main server')
-		# print('END!!')
+		#create instance of this class on the frontend 
+		ipaddress = "127.0.0.1"
+		portnumberforprimary = ":9091"
+		with Pyro4.core.Proxy('PYRO:UserOrders@'+ ipaddress + portnumberforprimary) as p:
+			try:
+				p._pyroBind()
+			except Pyro4.errors.CommunicationError:
+				print("connection error to OG class")
 
-		# self._UserOrderBackend = UserOrderBackend
+		Frontendclass = p
+
+
+
 		UserOrderBackend =connecttoprimary()
 
-		UserOrderBackend.setUserInfoBackend(value)
-		
-		UserOrderBackend =connecttoprimary()
+		#check if the value is of type string, if so then use different function that sets string variable
+		result = isinstance(value, str)
 
-		#append the overall list of orders with the current order
-		UserOrderBackend.appendtoOrderList(value)
+		if result == False:
+			print("Placing Normal Order")
+			#we have a dictionary and placing order as normal with dict
+			UserOrderBackend.setUserInfoBackend(value)
+			
+			UserOrderBackend =connecttoprimary()
 
-		#UserOrderBackend =connecttoprimary()
-		UserOrderBackend =connecttoprimary()
+			#append the overall list of orders with the current order
+			UserOrderBackend.appendtoOrderList(value)
+
+			#UserOrderBackend =connecttoprimary()
+			UserOrderBackend =connecttoprimary()
+
+			#get the confirmation message to send back
+			confirmation = UserOrderBackend.sendendmessage()
+
+			UserOrderBackend =connecttoprimary()
+
+
+			#set this as a message on the frontend 
+			Frontendclass.SetUserMessage(confirmation)
+
+			UserOrderBackend =connecttoprimary()
+
+
+			print('Confimation of order placed',confirmation)
+
+		else:
+			#we are retrieving an order, using Order ID - string
+			print("Received a User ID ",value)
+			#set the order ID
+			UserOrderBackend.setUserInfoOrderID(value)
+
+			UserOrderBackend =connecttoprimary()
+
+			#retrieve the OrderID
+			result = UserOrderBackend.retrieveOrder()
+
+			UserOrderBackend =connecttoprimary()
+
+	
+
+
+			#this means that the order ID has been found so we get the order Dict
+			if result ==1:
+				RetrievedOrder = UserOrderBackend.getorderdictforReturn()
+				UserOrderBackend =connecttoprimary()
+				print("we found the order, it is",RetrievedOrder)
+				#we set the message as this so the client knows to call getFullUserOrder
+				Frontendclass.SetUserMessage("OrderFound")
+				Frontendclass.setFullUserOrder(RetrievedOrder)
+
+			else:
+				InvalidOrder = UserOrderBackend.sendendmessage()
+				UserOrderBackend =connecttoprimary()
+				print("We did not find the order", InvalidOrder)
+				Frontendclass.SetUserMessage(InvalidOrder)
+
+
+
+
 
 		#backup the new list, sending across to the backup servers
 		UserOrderBackend.sendDataToBackups()
@@ -139,7 +219,7 @@ class UserOrderDetails(object):
 		#neworder = self._UserOrderBackend.getUserInfoBackend()
 
 #instantiate the userorderdetails class
-obj = UserOrderDetails({},"127.0.0.1",portnumberforprimary)
+obj = UserOrderDetails({},"127.0.0.1",portnumberforprimary,{},"")
 obj1 = FoodMenufrontend()
 
 
