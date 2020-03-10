@@ -1,9 +1,12 @@
 import Pyro4
 import sys
 import math
+import random
 #display questions to the user to get the user's basic info to facilitate delivery
 userinfo={}
 def getuserinfo():
+	#will be adding to this id as we go along, need to make it somewhat unique
+	customerid = ""
 	#make a dict of all the user info that we can send back up the chain
 	while True:
 		valid = False
@@ -17,7 +20,8 @@ def getuserinfo():
 			continue
 		else:
 			userinfo['firstname'] = firstname
-
+			#first char of customer id
+			customerid = customerid + firstname[0]
 
 		valid = False
 		while valid == False:
@@ -32,6 +36,9 @@ def getuserinfo():
 			continue
 		else:
 			userinfo['lastname'] = lastname
+			#second char of customer id
+			customerid = customerid + lastname[0]
+
 
 		print('\n')
 		valid = False
@@ -49,6 +56,8 @@ def getuserinfo():
 			continue
 		else:
 			userinfo['deliveryaddress'] = deliveryAddress
+			#third char of customer id
+			customerid = customerid + deliveryAddress[0]
 
 		print('\n')
 		valid = False
@@ -65,6 +74,8 @@ def getuserinfo():
 			continue
 		else:
 			userinfo['postcode'] = postcode
+			#fourth char of customer id
+			customerid = customerid + postcode[0]
 
 		valid = False
 		validrestnames = ["chinesedragon","mcdonalds","pizzahut","exoticdishes","restart"]
@@ -86,6 +97,17 @@ def getuserinfo():
 			continue
 		else:
 			userinfo['restaurantname'] = restaurantname
+			#fifth char of customer id
+			customerid = customerid + restaurantname[0]
+
+			#add two random numbers to the end of it
+			num1 = random.randint(1,9)
+			num2 = random.randint(1,9)
+
+			customerid = customerid + str(num1) + str(num2)
+			#add the customerid to the dictionary
+			print("Customer id is ",customerid)
+			userinfo['customerid'] = customerid
 
 		valid = False
 		while valid == False:
@@ -136,8 +158,12 @@ def getuserinfo():
 			continue
 		else:
 			userinfo['ordernumbers'] = ordernumbers
+
+
 			return ordernumbers
 			break
+
+
 
 ipaddress = "127.0.0.1"
 

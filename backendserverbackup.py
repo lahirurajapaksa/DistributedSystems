@@ -13,7 +13,7 @@ class UserOrderfromfrontend(object):
 
 	@Pyro4.expose
 	def getUserInfoBackend(self):
-		print("printing get user info")
+		print("getting user info")
 		print(self._userdict)
 		return self._userdict
 	@Pyro4.expose
@@ -22,6 +22,43 @@ class UserOrderfromfrontend(object):
 		self._userdict = value
 		print('received', value)
 
+	@Pyro4.expose
+	def sendDataToBackups(self):
+	#this function will access all the data stored in the class by using a proxy of the same class
+	#we point to the class with the proxy in order to access the variables
+	#this function will connect to the other two backup servers and send the data there
+		ipaddress = "127.0.0.1"
+		portnumberforprimary = ":9090"
+		print("ACCESSED SEND DATA TO BACKUPS")
+		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
+			try:
+				p._pyroBind()
+			except Pyro4.errors.CommunicationError:
+				print("connection error to backup class")
+
+		print("BACKING UP THE FOLLOWING DATA")
+		Backups = p
+		print("BEfore Dictionary line")
+		Dictionary = Backups.getUserInfoBackend()
+		print('END OF BACKUP')
+		#if u connect send it across
+
+		#print(Dictionary)
+
+		#connect to the remaining available servers and send over the information there
+
+		# print("userdict is ", self._userinfo)
+
+#the class that will store all the variables
+# @Pyro4.behavior(instance_mode="single")
+# class Backup(object):
+# 	def __init__(self,userdict,):
+# 		self.use
+#class backup - point to this with the proxy
+#class that has all variables that we need to store
+#replicate function to send all the variables to the other two
+
+#variable._self = pyroproxy ipaddress :9090
 
 def storemenus():
 	#store the food menus

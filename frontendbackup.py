@@ -8,15 +8,19 @@ ipaddress = "127.0.0.1"
 #have a nested try and except to try and connect to a server
 import Pyro4.errors
 portnumberforprimary = ':9090'
-with Pyro4.core.Proxy('PYRO:FOOD@'+ ipaddress + portnumberforprimary) as p:
+with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
 	try:
 		#try to connect to server number one
+		#call function in the main server that sends data to the other two
+		
 		p._pyroBind()
+
 		print("RUNNING number 1")
+		
 	except Pyro4.errors.CommunicationError:
 		#try to connect to server number two
 		portnumberforprimary = ':9092'
-		with Pyro4.core.Proxy('PYRO:FOOD@'+ ipaddress + portnumberforprimary) as p:
+		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
 				try:
 					#try to connect to server number one
 					p._pyroBind()
@@ -24,7 +28,7 @@ with Pyro4.core.Proxy('PYRO:FOOD@'+ ipaddress + portnumberforprimary) as p:
 				except Pyro4.errors.CommunicationError:
 					#try to connect to server number three
 					portnumberforprimary = ':9093'
-					with Pyro4.core.Proxy('PYRO:FOOD@'+ ipaddress + portnumberforprimary) as p:
+					with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
 						try:
 							#try to connect to server number one
 							p._pyroBind()
@@ -32,13 +36,25 @@ with Pyro4.core.Proxy('PYRO:FOOD@'+ ipaddress + portnumberforprimary) as p:
 						except Pyro4.errors.CommunicationError:
 							print("No backend servers are available")
 							sys.exit()
+#set p as UserOrderBackend
+#we use this later on
+UserOrderBackend = p
+#call the backups function to update the backup servers
+# UserOrderBackend.sendDataToBackups()
+#connect to the food class
+with Pyro4.core.Proxy('PYRO:FOOD@'+ ipaddress + portnumberforprimary) as p2:
+	try:
+		p2._pyroBind()
+		print("Created food object")
 
+	except Pyro4.errors.CommunicationError:
+		print("Could not connect to food object")
 
 
 
 
 # FoodMenu = Pyro4.core.Proxy('PYRO:FOOD@'+ ipaddress + ':9090')
-FoodMenu = p
+FoodMenu = p2
 
 #retrieve the menus from the backend
 
@@ -61,10 +77,11 @@ class FoodMenufrontend(object):
 
 @Pyro4.behavior(instance_mode="single")
 class UserOrderDetails(object):
-	def __init__(self,userdict,ipaddress,portnumberforprimary):
+	def __init__(self,userdict,ipaddress,portnumberforprimary,UserOrderBackend):
 		self._userdict = userdict
 		self._ipaddress = ipaddress
 		self._portnumberforprimary = portnumberforprimary
+		self.UserOrderBackend = UserOrderBackend
 
 	#	print("ok")
 
@@ -84,36 +101,28 @@ class UserOrderDetails(object):
 		print(self._ipaddress)
 		print(self._portnumberforprimary)
 
-		#connect to the backend and send over userinfo
-		print('START!!!')
-		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
-			try:
-				#try to connect to server number one
-				p._pyroBind()
-				print("WE ARE CONNECTED")
-			except Pyro4.errors.CommunicationError:
-				print('Could not connect to main server')
-		print('END!!')
+		# #connect to the backend and send over userinfo
+		# print('START!!!')
+		# with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
+		# 	try:
+		# 		#try to connect to server number one
+		# 		p._pyroBind()
+		# 		print("WE ARE CONNECTED")
+		# 	except Pyro4.errors.CommunicationError:
+		# 		print('Could not connect to main server')
+		# print('END!!')
 
-		UserOrderBackend = p
+		self._UserOrderBackend = p
 
-		UserOrderBackend.setUserInfoBackend(value)
+		self._UserOrderBackend.setUserInfoBackend(value)
 
-		neworder = UserOrderBackend.getUserInfoBackend()
-
-
+		UserOrderBackend.sendDataToBackups()
 
 
-	# #create instance of the order class
-	# UserOrderBackend = Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary)
-
-
-	# UserOrderBackend.setUserInfoBackend(selfuserinfo)
-
-	# neworder = UserOrderBackend.getUserInfoBackend()
+		#neworder = self._UserOrderBackend.getUserInfoBackend()
 
 #instantiate the userorderdetails class
-obj = UserOrderDetails({},"127.0.0.1",portnumberforprimary)
+obj = UserOrderDetails({},"127.0.0.1",portnumberforprimary,UserOrderBackend)
 obj1 = FoodMenufrontend()
 
 
