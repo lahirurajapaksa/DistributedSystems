@@ -48,7 +48,7 @@ class UserOrderfromfrontend(object):
 
 		#create instance of the class
 		ipaddress = "127.0.0.1"
-		portnumberforprimary = ":9090"
+		portnumberforprimary = ":9093"
 		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
 			try:
 				p._pyroBind()
@@ -74,7 +74,7 @@ class UserOrderfromfrontend(object):
 	#we point to the class with the proxy in order to access the variables
 	#this function will connect to the other two backup servers and send the data there
 		ipaddress = "127.0.0.1"
-		portnumberforprimary = ":9090"
+		portnumberforprimary = ":9093"
 		print("ACCESSED SEND DATA TO BACKUPS")
 		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
 			try:
@@ -112,7 +112,7 @@ class UserOrderfromfrontend(object):
 		print("Backupserver1",Backupserver1)
 
 		ipaddress = "127.0.0.1"
-		portnumberforbackup2 = ":9093"
+		portnumberforbackup2 = ":9090"
 		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforbackup2) as p:
 			try:
 				p._pyroBind()
@@ -123,17 +123,17 @@ class UserOrderfromfrontend(object):
 
 		Backupserver2 = p
 		print("Backupserver2", Backupserver2)
-
+		#store BigList in the backups by setting that as the OrderList in their respective classes
 		print('BIG LIST IS')
 		print(BigList)
-		#store BigList in the backups by setting that as the OrderList in their respective classes
+
+
 		if backupserver1exists==True:
 			Backupserver1.setOrderList(BigList)
 			print("Successfully backed up backup server 1")
 		if backupserver2exists==True:
 			Backupserver2.setOrderList(BigList)
 			print("Successfully backed up backup server 2")
-
 
 
 
@@ -167,7 +167,7 @@ def connecttofrontend():
 	    menuObject: 'FOOD',
 	    UserOrdersFrontEnd : 'UserOrdersBackend'
 
-	}, host="127.0.0.1", port=9090, ns=False, verbose=True)
+	}, host="127.0.0.1", port=9093, ns=False, verbose=True)
 
 
 connecttofrontend()
