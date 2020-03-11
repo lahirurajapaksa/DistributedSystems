@@ -27,6 +27,7 @@ def getuserinfo():
 
 
 	if (retrieveorder == False):
+		print("If you would like to go back to the beginning of your order at any time, please type 'restart' ")
 		while True:
 			valid = False
 			while valid==False:
@@ -87,7 +88,35 @@ def getuserinfo():
 				if len(postcode.split())<=0:
 					print("Cannot leave this field blank")
 				else:
-					valid = True
+					if postcode.lower() == 'restart':
+						break
+
+					#create instance of the frontend class
+					ipaddress = "127.0.0.1"
+					portnumberforprimary = ":9091"
+					with Pyro4.core.Proxy('PYRO:UserOrders@'+ ipaddress + portnumberforprimary) as p:
+						try:
+							p._pyroBind()
+						except Pyro4.errors.CommunicationError:
+							print("connection error to Frontend class")
+
+					Frontendclass = p
+
+					#call validate on the postcode
+					Frontendclass.validatepostcode(postcode)
+
+					#check what the result is
+					postresult = Frontendclass.Getpostcoderesult()
+
+					if postresult == "True":
+						valid = True
+					elif postresult =="False":
+						print("Please enter a valid postcode")
+						continue
+					else:
+						print("Please place your order at another time, sorry for the inconvenience")
+						sys.exit()
+					#valid = True
 
 			if postcode.lower() == "restart":
 				continue
@@ -207,12 +236,16 @@ def getuserinfo():
 
 
 
+try:
+	ipaddress = "127.0.0.1"
 
-ipaddress = "127.0.0.1"
+	FoodMenu = Pyro4.core.Proxy('PYRO:FOOD2@'+ ipaddress + ':9091')
 
-FoodMenu = Pyro4.core.Proxy('PYRO:FOOD2@'+ ipaddress + ':9091')
+	FoodDict = FoodMenu.foodmenureturn()
+except:
+	print("Please place your order at another time, sorry for the inconvenience")
+	sys.exit()
 
-FoodDict = FoodMenu.foodmenureturn()
 
 
 
@@ -242,10 +275,14 @@ listoforders = getuserinfo()
 OrderInstance = Pyro4.core.Proxy('PYRO:UserOrders@'+ ipaddress + ':9091')
 
 if retrieveorder == False:
-	OrderInstance.sendUserInfotoBackend(userinfo)
-	#we expect to retrieve a confirmation message that the order was placed
-	confirmation = OrderInstance.GetUserMessage()
-	print(confirmation)
+	try:
+		OrderInstance.sendUserInfotoBackend(userinfo)
+		#we expect to retrieve a confirmation message that the order was placed
+		confirmation = OrderInstance.GetUserMessage()
+		print(confirmation)
+	except:
+		print("Please place your order at another time, sorry for the inconvenience")
+		sys.exit()
 else:
 	OrderInstance.sendUserInfotoBackend(listoforders)
 

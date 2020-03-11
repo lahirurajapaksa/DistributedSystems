@@ -18,54 +18,54 @@ class UserOrderfromfrontend(object):
 
 	@Pyro4.expose
 	def getUserInfoBackend(self):
-		print("getting user info")
-		print(self._userdict)
+		#print("getting user info")
+		#print(self._userdict)
 		return self._userdict
 	@Pyro4.expose
 	def setUserInfoBackend(self,value):
-		print("setting user info")
+		#print("setting user info")
 		self._userdict = value
-		print('received', value)
+		#print('received', value)
 
 	@Pyro4.expose
 	def setUserInfoOrderID(self,value):
-		print("Setting order ID")
+		#print("Setting order ID")
 		self._OrderID = value
 
 	@Pyro4.expose
 	def getUserInfoOrderID(self):
-		print("Getting order ID")
+		#print("Getting order ID")
 		return self._OrderID
 
 	@Pyro4.expose
 	def setOrderList(self,value):
-		print("Setting the list of orders")
+		#print("Setting the list of orders")
 
 		self._OrderList = value
-		print("Order List is ",self._OrderList)
+		#print("Order List is ",self._OrderList)
 
 	@Pyro4.expose
 	def getOrderList(self):
 
-		print("Getting list of orders")
-		print(self._OrderList)
+		#print("Getting list of orders")
+		#print(self._OrderList)
 		return self._OrderList
 
 	@Pyro4.expose
 	def setorderdictforReturn(self,value):
-		print("Setting the Order Dict to return")
+		#print("Setting the Order Dict to return")
 		self._OrderDict = value
 
 	@Pyro4.expose
 	def getorderdictforReturn(self):
-		print("Getting the Order Dict to return")
+		#print("Getting the Order Dict to return")
 		return self._OrderDict
 
 
 	@Pyro4.expose
 	def setmessage(self,value):
 		self._message = value
-		print("Message to return is ",self._message)
+		#print("Message to return is ",self._message)
 
 	@Pyro4.expose
 	def sendendmessage(self):
@@ -98,7 +98,7 @@ class UserOrderfromfrontend(object):
 			currentdict = ReturnedOrderlist[i]
 			currentcustid = currentdict['customerid']
 			if currentcustid == OrderIDtocheck:
-				print("Found the Order")
+				#print("Found the Order")
 				foundID = True
 				dicttoreturn = currentdict
 		
@@ -108,7 +108,7 @@ class UserOrderfromfrontend(object):
 			OGclass.setorderdictforReturn(dicttoreturn)
 			return 1
 		else:
-			print("Did not find the order")
+			#print("Did not find the order")
 			#send back an error to the client
 			messagetoreturn = "Invalid OrderID used"
 			OGclass.setmessage(messagetoreturn)
@@ -119,7 +119,7 @@ class UserOrderfromfrontend(object):
 	#will be appending a dictionary to the list of dictionaries
 	@Pyro4.expose
 	def appendtoOrderList(self,dictionary):
-		print("APPEND to order list")
+		#print("APPEND to order list")
 
 		# self.BIGorderlist.append(dictionary)
 		# print('list is ',self.BIGorderlist)
@@ -159,14 +159,14 @@ class UserOrderfromfrontend(object):
 	#this function will connect to the other two backup servers and send the data there
 		ipaddress = "127.0.0.1"
 		portnumberforprimary = ":9092"
-		print("ACCESSED SEND DATA TO BACKUPS")
+		#print("ACCESSED SEND DATA TO BACKUPS")
 		with Pyro4.core.Proxy('PYRO:UserOrdersBackend@'+ ipaddress + portnumberforprimary) as p:
 			try:
 				p._pyroBind()
 			except Pyro4.errors.CommunicationError:
 				print("connection error to backup class")
 
-		print("BACKING UP THE FOLLOWING DATA")
+		#print("BACKING UP THE FOLLOWING DATA")
 		Backups = p
 		# print("BEfore Dictionary line")
 		# Dictionary = Backups.getUserInfoBackend()
@@ -176,7 +176,7 @@ class UserOrderfromfrontend(object):
 
 		print('LIST TO BACKUP IS ',BigList)
 
-		print('END OF BACKUP')
+		#print('END OF BACKUP')
 		#if u connect send it across to the backups
 
 		backupserver1exists = False
@@ -193,7 +193,7 @@ class UserOrderfromfrontend(object):
 				print("connection error to backup server 1")
 
 		Backupserver1 = p
-		print("Backupserver1",Backupserver1)
+		#print("Backupserver1",Backupserver1)
 
 		ipaddress = "127.0.0.1"
 		portnumberforbackup2 = ":9093"
@@ -206,7 +206,7 @@ class UserOrderfromfrontend(object):
 				print("connection error to backup server 2")
 
 		Backupserver2 = p
-		print("Backupserver2", Backupserver2)
+		#print("Backupserver2", Backupserver2)
 
 		print('BIG LIST IS')
 		print(BigList)
